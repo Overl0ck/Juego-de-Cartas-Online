@@ -1,0 +1,101 @@
+[
+  {
+    "id": "rebel_scout_1",
+    "name": "Explorador Cibertech",
+    "type": "Personaje",
+    "cost": {"energia": 1, "datos": 0, "creditos": 1},
+    "attack": 2,
+    "defense": 1,
+    "abilities": ["Al entrar en juego: Roba 1 dato."],
+    "flavorText": "Silencioso como la Fuerza, preciso como un algoritmo.",
+    "illustration": "explorador_rebelde.jpeg"
+  },
+  {
+    "id": "borg_assimilator_unit",
+    "name": "Unidad de Asimilación Borg",
+    "type": "Personaje",
+    "cost": {"energia": 2, "datos": 1, "creditos": 0},
+    "attack": 3,
+    "defense": 3,
+    "abilities": ["Resistencia (Reduce el daño recibido en 1)."],
+    "flavorText": "La resistencia es fútil, la adaptación es la clave.",
+    "illustration": "unidad_borg.jpg"
+  },
+
+  {
+    "id": "ataque_hacker",
+    "name": "Ataque Hacker",
+    "type": "Personaje",
+    "cost": {"energia": 2, "datos": 1, "creditos": 0},
+    "attack": 3,
+    "defense": 3,
+    "abilities": ["Roba creditos al jugador contrario."],
+    "flavorText": "En el vasto universo digital, los hackers son los nuevos piratas.",
+    "illustration": "ataque_hacker.jpeg"
+  },
+
+   {
+    "id": "asalto_terminator",
+    "name": "Asalto Terminator",
+    "type": "Ejercito",
+    "cost": {"energia": 4, "datos": 2, "creditos": 2},
+    "attack": 5,
+    "defense": 5,
+    "abilities": ["Ataque (Produce daño recibido en 1)."],
+    "flavorText": "El futuro es inevitable, y nosotros somos su heraldos.",
+    "illustration": "asalto_terminator.jpeg"
+  },
+
+   {
+    "id": "plata_energia",
+    "name": "Planta de Energía",
+    "type": "Edificio",
+    "cost": {"energia": 2, "datos": 1, "creditos": 1},
+    "attack": 0,
+    "defense": 3,
+    "abilities": ["Genera Energia."],
+    "flavorText": "La fuente de poder de toda nave estelar.",
+    "illustration":"planta_energia.jpeg"
+  },
+  
+  {
+    "id": "nave_estrella_1",
+    "name": "Nave Combate Estelar",
+    "type": "Nave",
+    "cost": {"energia": 2, "datos": 1, "creditos": 0},
+    "attack": 3,
+    "defense": 3,
+    "abilities": ["Vuela sobre los sistemas enemigos."],
+    "flavorText": "Rápida y letal.",
+    "illustration":"nave estelar.jpeg"
+  },
+  {
+    "id": "cybernetic_repair",
+    "name": "Reparación Cibernética",
+    "type": "Habilidad",
+    "cost": {"energia": 1, "datos": 0, "creditos": 1},
+    "abilities": ["Restaura 2 puntos de vida a un personaje o nave."],
+    "flavorText": "La tecnología puede sanar, pero también puede herir.",
+    "illustration": "reparacion_cibernetica.jpg"
+  },
+  {
+  "id": "mercenary",
+  "name": "Mercenario",
+  "type": "Personaje",
+  "cost": {"energia": 2, "datos": 0, "creditos": 0},
+  "attack": 2,
+  "defense": 2,
+  "abilities": ["Al entrar en juego: gana 1 crédito."],
+  "flavorText": "Por el precio justo, vuela para cualquiera.",
+  "illustration": "mercenario.jpg"
+},
+{
+  "id": "laser_barrage",
+  "name": "Disparo Láser",
+  "type": "Habilidad",
+  "cost": {"energia": 2, "datos": 0, "creditos": 1},
+  "abilities": ["Inflige 3 de daño a una nave enemiga."],
+  "flavorText": "Un destello, y el vacío lo inunda todo.",
+  "illustration": "disparo_laser.jpg"
+}
+]
