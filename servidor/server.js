@@ -1,125 +1,170 @@
-// servidor/server.js
 const express = require('express');
 const http = require('http');
-const { Server } = require("socket.io");
+const { Server } = require('socket.io');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+  cors: { origin: "*" }
 });
 
-app.use(express.static(path.join(__dirname, '../public')));
+// Servir archivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Cola de emparejamiento
-let jugadoresEsperando = null;
-// Añade estas variables globales
-let salas = {}; // { roomId: { jugadoresListos: Set, turnoDe: nombre } }
+// Namespaces para juegos
+const cyberpunkNamespace = io.of("/cyberpunk");
+const medievalNamespace = io.of("/medieval");
 
-io.on('connection', (socket) => {
-    socket.nombre = null;
-    socket.room = null;
+inicializarModo1v1(cyberpunkNamespace, "Cyberpunk");
+inicializarModo1v1(medievalNamespace, "Medieval");
 
-    // Recibir nombre del jugador
+function inicializarModo1v1(namespace, nombreJuego) {
+  let jugadoresEsperando = null;
+  let salas = {};
+
+  namespace.on("connection", (socket) => {
+    console.log(`🟢 [${nombreJuego}] Nuevo cliente conectado - ID: ${socket.id}`);
+
     socket.on("nombre jugador", (nombre) => {
-        socket.nombre = nombre;
+      socket.nombre = nombre;
+      console.log(`👤 [${nombreJuego}] Jugador ${socket.id} se identificó como "${nombre}"`);
 
-        // Si ya está emparejado y ambos tienen nombre, enviar nombres a ambos
-        if (socket.room) {
-            enviarNombresAJugadores(socket.room);
-        }
+      if (socket.sala) {
+        console.log(`↪️ [${nombreJuego}] Reenviando nombres en sala ${socket.sala}`);
+        enviarNombresAJugadores(socket.sala);
+      }
     });
 
     // Emparejar jugadores
     if (jugadoresEsperando === null) {
-        jugadoresEsperando = socket;
-        socket.emit("mensaje", "Esperando a otro jugador...");
+      jugadoresEsperando = socket;
+      socket.emit("mensaje", "Esperando a otro jugador...");
+      console.log(`⏳ [${nombreJuego}] Jugador ${socket.id} esperando emparejamiento`);
     } else {
-        const jugador1 = jugadoresEsperando;
-        const jugador2 = socket;
+      const jugador1 = jugadoresEsperando;
+      const jugador2 = socket;
 
-        const room = `sala-${jugador1.id}-${jugador2.id}`;
-        jugador1.join(room);
-        jugador2.join(room);
+      const salaId = `sala-${jugador1.id}-${jugador2.id}`;
+      jugador1.join(salaId);
+      jugador2.join(salaId);
+      jugador1.sala = salaId;
+      jugador2.sala = salaId;
 
-        jugador1.emit("mensaje", "¡Conectado con otro jugador!");
-        jugador2.emit("mensaje", "¡Conectado con otro jugador!");
+      jugadoresEsperando = null;
 
-        jugador1.room = room;
-        jugador2.room = room;
+      salas[salaId] = {
+        jugadoresListos: new Set(),
+        turnoDe: null,
+        contadorTurnos: 1
+      };
 
-        jugadoresEsperando = null;
+      console.log(`✅ [${nombreJuego}] Sala creada: ${salaId}`);
+      console.log(`👥 [${nombreJuego}] Jugadores emparejados: ${jugador1.nombre} (${jugador1.id}) y ${jugador2.nombre} (${jugador2.id})`);
 
-        console.log(`Emparejados en sala: ${room}`);
+      jugador1.emit("mensaje", "¡Emparejado con otro jugador!");
+      jugador2.emit("mensaje", "¡Emparejado con otro jugador!");
 
-        // Si ambos ya enviaron su nombre, enviar nombres
-        enviarNombresAJugadores(room);
+      enviarNombresAJugadores(salaId);
     }
 
     socket.on("iniciar juego", () => {
-        if (!socket.room) return;
-        if (!salas[socket.room]) {
-            salas[socket.room] = { jugadoresListos: new Set(), turnoDe: null, contadorTurnos: 0 };
-        }
-        salas[socket.room].jugadoresListos.add(socket.id);
+      const salaId = socket.sala;
+      if (!salaId || !salas[salaId]) return;
 
-        // Cuando ambos jugadores han pulsado "Iniciar juego"
-        if (salas[socket.room].jugadoresListos.size === 2) {
-            // Decide aleatoriamente quién empieza
-            const sockets = Array.from(io.sockets.adapter.rooms.get(socket.room) || [])
-                .map(id => io.sockets.sockets.get(id));
-            const primero = Math.random() < 0.5 ? sockets[0] : sockets[1];
-            salas[socket.room].turnoDe = primero.nombre;
-            salas[socket.room].contadorTurnos = 1; // Primer turno
-            io.to(socket.room).emit("juego iniciado", { turnoDe: primero.nombre, contadorTurnos: 1 });
-        }
+      salas[salaId].jugadoresListos.add(socket.id);
+      console.log(`🟡 [${nombreJuego}] ${socket.nombre} ha pulsado "Iniciar juego" en sala ${salaId}`);
+
+      const sockets = Array.from(namespace.adapter.rooms.get(salaId) || [])
+        .map(id => namespace.sockets.get(id));
+
+      // Avisar al oponente si aún no ha pulsado "iniciar"
+      const oponente = sockets.find(s => s.id !== socket.id && !salas[salaId].jugadoresListos.has(s.id));
+      if (oponente) {
+        oponente.emit("mensaje", `${socket.nombre} está listo. ¡Pulsa "Iniciar juego" para comenzar!`);
+        console.log(`📨 [${nombreJuego}] Se notificó a ${oponente.nombre} que ${socket.nombre} está listo`);
+      }
+
+      // Si ambos están listos, iniciar juego
+      if (salas[salaId].jugadoresListos.size === 2) {
+        const primero = Math.random() < 0.5 ? sockets[0] : sockets[1];
+        salas[salaId].turnoDe = primero.nombre;
+
+        console.log(`🚀 [${nombreJuego}] Juego iniciado en sala ${salaId}`);
+        console.log(`🎯 [${nombreJuego}] Primer turno: ${primero.nombre}`);
+
+        namespace.to(salaId).emit("juego iniciado", {
+          turnoDe: primero.nombre,
+          contadorTurnos: 1
+        });
+      }
     });
 
     socket.on("terminar turno", () => {
-        if (!socket.room || !salas[socket.room]) return;
-        // Cambia el turno al otro jugador
-        const sockets = Array.from(io.sockets.adapter.rooms.get(socket.room) || [])
-            .map(id => io.sockets.sockets.get(id));
-        const siguiente = sockets.find(s => s.nombre !== salas[socket.room].turnoDe);
-        salas[socket.room].turnoDe = siguiente.nombre;
-        salas[socket.room].contadorTurnos += 1;
-        io.to(socket.room).emit("cambio turno", { turnoDe: siguiente.nombre, contadorTurnos: salas[socket.room].contadorTurnos });
+      const salaId = socket.sala;
+      if (!salaId || !salas[salaId]) return;
+
+      const sockets = Array.from(namespace.adapter.rooms.get(salaId))
+        .map(id => namespace.sockets.get(id));
+      const siguiente = sockets.find(s => s.nombre !== salas[salaId].turnoDe);
+
+      salas[salaId].turnoDe = siguiente.nombre;
+      salas[salaId].contadorTurnos += 1;
+
+      console.log(`🔁 [${nombreJuego}] Turno cambiado en sala ${salaId} → Turno de ${siguiente.nombre}, Turno #${salas[salaId].contadorTurnos}`);
+
+      namespace.to(salaId).emit("cambio turno", {
+        turnoDe: siguiente.nombre,
+        contadorTurnos: salas[salaId].contadorTurnos
+      });
     });
 
-    // Evento: recibir carta jugada
     socket.on("jugar carta", (data) => {
-        if (socket.room) {
-            socket.to(socket.room).emit("carta jugada", data);
-        }
+      const salaId = socket.sala;
+      if (salaId) {
+        console.log(`🃏 [${nombreJuego}] ${socket.nombre} jugó una carta en sala ${salaId}:`, data);
+        socket.to(salaId).emit("carta jugada", data);
+      }
     });
 
     socket.on("disconnect", () => {
-        console.log("Jugador desconectado:", socket.id);
-        if (jugadoresEsperando === socket) {
-            jugadoresEsperando = null;
-        } else if (socket.room) {
-            const room = socket.room;
-            socket.to(room).emit("mensaje", "El jugador ha salido de la sala.");
-            socket.leave(room);
-            // Eliminar sala si existe
-            if (salas[room]) {
-                delete salas[room];
-            }
-        }
+      console.log(`🔴 [${nombreJuego}] Jugador desconectado - ID: ${socket.id} (${socket.nombre || "sin nombre"})`);
+
+      if (jugadoresEsperando === socket) {
+        jugadoresEsperando = null;
+      }
+
+      const salaId = socket.sala;
+      if (salaId) {
+        socket.to(salaId).emit("mensaje", "El jugador se ha desconectado.");
+        delete salas[salaId];
+        console.log(`⚠️ [${nombreJuego}] Sala ${salaId} eliminada por desconexión`);
+      }
     });
 
-    // Función para enviar los nombres a ambos jugadores de la sala
-    function enviarNombresAJugadores(room) {
-        const sockets = Array.from(io.sockets.adapter.rooms.get(room) || [])
-            .map(id => io.sockets.sockets.get(id));
-        if (sockets.length === 2 && sockets[0].nombre && sockets[1].nombre) {
-            sockets[0].emit("nombres jugadores", { tu: sockets[0].nombre, oponente: sockets[1].nombre });
-            sockets[1].emit("nombres jugadores", { tu: sockets[1].nombre, oponente: sockets[0].nombre });
-        }
-    }
-});
+    function enviarNombresAJugadores(salaId) {
+      const sockets = Array.from(namespace.adapter.rooms.get(salaId) || [])
+        .map(id => namespace.sockets.get(id));
 
-server.listen(3000, () => {
-    console.log("Servidor en puerto 3000");
+      if (sockets.length === 2 && sockets[0].nombre && sockets[1].nombre) {
+        sockets[0].emit("nombres jugadores", {
+          tu: sockets[0].nombre,
+          oponente: sockets[1].nombre
+        });
+        sockets[1].emit("nombres jugadores", {
+          tu: sockets[1].nombre,
+          oponente: sockets[0].nombre
+        });
+
+        console.log(`📨 [${nombreJuego}] Nombres enviados: ${sockets[0].nombre} vs ${sockets[1].nombre} en sala ${salaId}`);
+      } else {
+        console.log(`⚠️ [${nombreJuego}] No se pudieron enviar nombres, jugadores incompletos en sala ${salaId}`);
+      }
+    }
+  });
+}
+
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`🧠 Servidor escuchando en http://localhost:${PORT}`);
 });

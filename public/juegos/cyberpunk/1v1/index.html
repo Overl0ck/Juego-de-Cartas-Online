@@ -2,21 +2,32 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Juego de Cartas</title>
+  <title>Cyberpunk</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Juego de Cartas Multijugador</h1>
+  <h1>Cyberpunk</h1>
+ 
+<div id="pantalla-inicial">
   <label for="nombre-jugador">Nombre:</label>
   <input type="text" id="nombre-jugador" maxlength="20">
   <button onclick="conectar()">Conectar</button>
+  <button id="btn-desconectar" class="btn-rojo" onclick="desconectar()" disabled>Desconectar</button>
+  <button id="btn-volver-seleccion" onclick="volverASeleccion()">Volver al menú principal</button>
   <div id="estado-conexion">Desconectado</div>
-  <div id="nombres-jugadores"></div>
+ <div class="nombres-jugadores"></div>
   <button id="btn-iniciar" onclick="iniciarJuego()" disabled>Iniciar juego</button>
+</div>
+
+
+<div id="pantalla-juego" style="display: none;">
+  <div class="nombres-jugadores"></div>
   <div id="info-turno"></div>
   <div id="contador-turnos">Turno: 0</div>
   <button id="btn-finalizar-turno" onclick="finalizarTurno()" disabled>Finalizar turno</button>
+ <button id="btn-volver" onclick="volverAPantallaPrincipal()">Volver al inicio</button>
+</div> 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="game.js"></script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
