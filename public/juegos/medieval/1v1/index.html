@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AsturWars</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>AsturWars</h1>
+  <label for="nombre-jugador">Nombre:</label>
+  <input type="text" id="nombre-jugador" maxlength="20">
+  <button onclick="conectar()">Conectar</button>
+  <div id="estado-conexion">Desconectado</div>
+  <div id="nombres-jugadores"></div>
+  <button id="btn-iniciar" onclick="iniciarJuego()" disabled>Iniciar juego</button>
+  <div id="info-turno"></div>
+  <div id="contador-turnos">Turno: 0</div>
+  <button id="btn-finalizar-turno" onclick="finalizarTurno()" disabled>Finalizar turno</button>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

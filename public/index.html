@@ -2,21 +2,39 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Juego de Cartas</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Seleccionar Juego</title>
+   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Juego de Cartas Multijugador</h1>
-  <label for="nombre-jugador">Nombre:</label>
-  <input type="text" id="nombre-jugador" maxlength="20">
-  <button onclick="conectar()">Conectar</button>
-  <div id="estado-conexion">Desconectado</div>
-  <div id="nombres-jugadores"></div>
-  <button id="btn-iniciar" onclick="iniciarJuego()" disabled>Iniciar juego</button>
-  <div id="info-turno"></div>
-  <div id="contador-turnos">Turno: 0</div>
-  <button id="btn-finalizar-turno" onclick="finalizarTurno()" disabled>Finalizar turno</button>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="game.js"></script>
+  <h1>Selecciona tu juego y modo</h1>
+
+  <label for="select-juego">Juego:</label>
+  <select id="select-juego">
+   <option value="cyberpunk">💠 Cyberpunk</option>
+    <option value="medieval">🗡️ Medieval</option>
+  </select>
+
+  <br>
+
+  <label for="select-modo">Modo:</label>
+  <select id="select-modo">
+    <option value="1v1">⚔️ 1 vs 1</option>
+    <!-- Puedes añadir más modos en el futuro -->
+  </select>
+
+  <br><br>
+
+  <button onclick="cargarJuego()">Jugar</button>
+
+  <script>
+    function cargarJuego() {
+      const juego = document.getElementById("select-juego").value;
+      const modo = document.getElementById("select-modo").value;
+      const ruta = `juegos/${juego}/${modo}/index.html`;
+
+      // Redirigir al juego seleccionado
+      window.location.href = ruta;
+    }
+  </script>
 </body>
 </html>
